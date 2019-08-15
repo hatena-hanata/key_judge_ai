@@ -15,6 +15,14 @@ class Note:
                     if s in c_split:
                         self.name = c
 
+    def transpose(self, step):
+        if step == 0:
+            return self
+        prev_index = Note.name_lst.index(self.name)
+        now_index = (prev_index + step) % 12
+        self.name = Note.name_lst[now_index]
+        return self
+
     def __str__(self):
         return self.name
 
@@ -49,7 +57,7 @@ class Song:
         """
         コンストラクタ
         :param name: str
-        :param key: Noteのインスタンス
+        :param key: Chordのインスタンス
         """
         # 曲名
         self.name = name
