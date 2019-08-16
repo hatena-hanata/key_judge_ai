@@ -6,7 +6,7 @@ from tqdm import tqdm
 import math
 import time
 
-
+WAITING_TIME = int(60)
 
 
 def main():
@@ -27,15 +27,13 @@ def main():
             moji_links.append(moji.get('value'))
 
     # 頭文字ごと処理
-    for moji_link in tqdm(moji_links):
+    for moji_link in tqdm(moji_links[6:]):
         moji_url = url + moji_link
 
-        if '/a.html' in moji_url:
-            continue
 
         try:
-            r_moji = requests.get(moji_url)
-        except TimeoutError:
+            r_moji = requests.get(moji_url, timeout=WAITING_TIME)
+        except:
             print('{} skipされた'.format(moji_url))
             continue
 
@@ -50,34 +48,33 @@ def main():
             else:
                 artist_link_dict[name] = link.get('href')
 
-        # # 歌手ごと処理
-        # if '/a.html' in moji_url:
-        #     flg = True
-        # else:
-        #     flg = False
+        # 歌手ごと処理
+        if '/ki.html' in moji_url:
+            flg = True
+        else:
+            flg = False
 
-
-
+        #
+        # flg = True
         for artist in artist_link_dict:
             song_cnt = 0
 
-            # # 中断してしまったので途中から
-            # if artist == '青山テルマ':
-            #     flg = False
-            # if flg:
-            #     continue
+            # 中断してしまったので途中から
+            if artist == 'キリト':
+                flg = False
+            if flg:
+                continue
 
             artist_dir = save_dir + artist
             os.makedirs(artist_dir, exist_ok=True)
             ar_url = artist_link_dict[artist]
             try:
-                r_ar = requests.get(ar_url)
-            except TimeoutError:
+                r_ar = requests.get(ar_url, timeout=WAITING_TIME)
+            except:
                 print('{} skipされた'.format(artist))
                 continue
 
-            soup_ar = BeautifulSoup(r_ar.content, 'lxml')
-
+            soup_ar = BeautifulSoup(r_ar.content, 'html.parser')
             # 歌手の総曲数を求める
             pg = soup_ar.find_all('font', size='3')[-1]
             pg_string = pg.text.split(' ')
@@ -91,8 +88,8 @@ def main():
             for p in range(1, max_page+1):
                 page_url = ar_url + '&page={}'.format(p)
                 try:
-                    r_song_lst = requests.get(page_url)
-                except TimeoutError:
+                    r_song_lst = requests.get(page_url, timeout=WAITING_TIME)
+                except:
                     print('{} {} skipされた'.format(artist, p))
                     continue
                 soup_song_lst = BeautifulSoup(r_song_lst.content, 'lxml')
@@ -107,7 +104,16 @@ def main():
                         song_link_set.add(s_link.get('href'))
 
                 for s_link in song_link_set:
-                    urllib.request.urlretrieve(s_link, artist_dir + '/{}.html'.format(song_cnt))
+                    try:
+                        data = urllib.request.urlopen(s_link, timeout=WAITING_TIME).read()
+                        with open(artist_dir + '/{}.html'.format(song_cnt), mode='wb') as ht:
+                            ht.write(data)
+                    except:
+                        print('{} {} {} skipされた'.format(artist, p, s_link))
+
+                    #     urllib.request.urlretrieve(s_link, artist_dir + '/{}.html'.format(song_cnt))
+                    # except TimeoutError:
+                    #     print('{} {} {} skipされた'.format(artist, p, s_link))
                     song_cnt += 1
                     time.sleep(1)
 
