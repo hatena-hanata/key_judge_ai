@@ -55,8 +55,8 @@ def get_diatonic_chord(key_str):
     ]
     # ダイアトニックコード間の間隔
     Major_step = [0, 5, 4, 1, 4, 5, 4]
-    # 間隔、ナチュラルマイナー・スケール（変更したほうがよいかも）
-    minor_step = [0, 2, 1, 5, 3, 2, 4]
+    # 間隔、ナチュラルマイナー・スケールで VmをVに変更（頻出なので）
+    minor_step = [0, 4, 1, 5, 3, 2, 4]
     diatonic_chord_lst = []
     # 長調
     if key_str.split('_')[-1] == 'Major':
@@ -76,7 +76,7 @@ def get_diatonic_chord(key_str):
 
 def decrease_non_diatonic_chord(df, ratio):
     # コードのカラムリスト
-    col_lst = df.columns[1:]
+    col_lst = df.columns[2:]
 
     # 小数に対応させる
     diatonic_col_dict = {}
@@ -86,9 +86,10 @@ def decrease_non_diatonic_chord(df, ratio):
 
     # 行ごとに処理
     for index, row in df.iterrows():
-        diatonic_chord_lst = diatonic_col_dict[row[0]]
-        for col in diatonic_chord_lst:
-            df.at[index, col] *= ratio
+        diatonic_chord_lst = diatonic_col_dict[row[1]]
+        for col in col_lst:
+            if col not in diatonic_chord_lst:
+                df.at[index, col] *= ratio
 
     return df
 
@@ -108,7 +109,7 @@ def main():
     df = drop_sum_zero(df)
 
     # ダイアトニックコードじゃないコードを弱める
-    df = decrease_non_diatonic_chord(df, ratio=0.5)
+    # df = decrease_non_diatonic_chord(df, ratio=0.5)
 
     # dfから説明変数と目的変数に分ける
     X, y = get_valiables(df)

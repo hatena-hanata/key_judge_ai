@@ -27,9 +27,8 @@ def main():
             moji_links.append(moji.get('value'))
 
     # 頭文字ごと処理
-    for moji_link in tqdm(moji_links[6:]):
+    for moji_link in tqdm(moji_links[36:]):
         moji_url = url + moji_link
-
 
         try:
             r_moji = requests.get(moji_url, timeout=WAITING_TIME)
@@ -37,7 +36,7 @@ def main():
             print('{} skipされた'.format(moji_url))
             continue
 
-        soup_moji = BeautifulSoup(r_moji.content, 'lxml')
+        soup_moji = BeautifulSoup(r_moji.content, 'html.parser')
         table = soup_moji.find_all('table', align='center', border='0')[2]
         artist_links = table.find_all('a')
         artist_link_dict = {} # アーティスト名：リンク　の辞書を作成
@@ -49,18 +48,17 @@ def main():
                 artist_link_dict[name] = link.get('href')
 
         # 歌手ごと処理
-        if '/ki.html' in moji_url:
+        if '/yu.html' in moji_url:
             flg = True
         else:
             flg = False
 
-        #
         # flg = True
         for artist in artist_link_dict:
             song_cnt = 0
 
             # 中断してしまったので途中から
-            if artist == 'キリト':
+            if artist == 'ゆいこ':
                 flg = False
             if flg:
                 continue
@@ -92,7 +90,7 @@ def main():
                 except:
                     print('{} {} skipされた'.format(artist, p))
                     continue
-                soup_song_lst = BeautifulSoup(r_song_lst.content, 'lxml')
+                soup_song_lst = BeautifulSoup(r_song_lst.content, 'html.parser')
                 form = soup_song_lst.find_all('form', action='search.cgi')[-1]
                 song_links = form.find_all('a')
                 song_links = song_links[:len(song_links) - 8]  # 末尾8こはいらない
