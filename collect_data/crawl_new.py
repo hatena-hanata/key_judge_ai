@@ -41,32 +41,29 @@ def main():
             continue
 
         soup_moji = BeautifulSoup(r_moji.content, 'html.parser')
-        # table = soup_moji.find_all('table', align='center', border='0')[2]
-        # artist_links = table.find_all('a')
         artist_links = soup_moji.find_all('a', href=re.compile("^//music.j-total.net/db/search.cgi"))
-        artist_link_dict = {} # アーティスト名：リンク　の辞書を作成
+        artist_link_dict = {}
         for link in artist_links:
-            name = ''.join(link.text.split('\n')).replace(' ', '')
-            if 'http' not in link.get('href'):
-                artist_link_dict[name] = 'http:' + link.get('href')
-            else:
-                artist_link_dict[name] = link.get('href')
+            name = link.text.replace('\n', '').replace(' ', '')
+            if len(name) == 0:
+                continue
+            artist_link_dict[name] = 'http:' + link.get('href')
 
-        # 歌手ごと処理
-        if '/yu.html' in moji_url:
-            flg = True
-        else:
-            flg = False
+        # # 歌手ごと処理
+        # if '/yu.html' in moji_url:
+        #     flg = True
+        # else:
+        #     flg = False
 
         # flg = True
         for artist in artist_link_dict:
             song_cnt = 0
 
-            # 中断してしまったので途中から
-            if artist == 'ゆいこ':
-                flg = False
-            if flg:
-                continue
+            # # 中断してしまったので途中から
+            # if artist == 'ゆいこ':
+            #     flg = False
+            # if flg:
+            #     continue
 
             artist_dir = save_dir + artist
             os.makedirs(artist_dir, exist_ok=True)
@@ -96,23 +93,26 @@ def main():
                     print('{} {} skipされた'.format(artist, p))
                     continue
                 soup_song_lst = BeautifulSoup(r_song_lst.content, 'html.parser')
-                form = soup_song_lst.find_all('form', action='search.cgi')[-1]
-                song_links = form.find_all('a')
-                song_links = song_links[:len(song_links) - 8]  # 末尾8こはいらない
-                song_link_set = set()  # 重複をなくす
-                for s_link in song_links:
-                    if 'http' not in s_link:
-                        song_link_set.add('http:' + s_link.get('href'))
-                    else:
-                        song_link_set.add(s_link.get('href'))
 
-                for s_link in song_link_set:
+                song_links = soup_song_lst.find_all('a', href=re.compile("^//music.j-total.net/db/rank.cgi\?mode"), target='')
+
+                # form = soup_song_lst.find_all('form', action='search.cgi')[-1]
+                # song_links = form.find_all('a')
+                # song_links = song_links[:len(song_links) - 8]  # 末尾8こはいらない
+                # song_link_set = set()  # 重複をなくす
+                for s_link in song_links:
+                    s_url = 'http:' + s_link.get('href')
+                    song_name = s_link.find('b').text
                     try:
-                        data = urllib.request.urlopen(s_link, timeout=WAITING_TIME).read()
-                        with open(artist_dir + '/{}.html'.format(song_cnt), mode='wb') as ht:
-                            ht.write(data)
+                        data = urllib.request.urlopen(s_url, timeout=WAITING_TIME).read()
+                        try:
+                            with open(artist_dir + '/{}.html'.format(song_name), mode='wb') as ht:
+                                ht.write(data)
+                        except:
+                            with open(artist_dir + '/{}.html'.format(song_cnt), mode='wb') as ht:
+                                ht.write(data)
                     except:
-                        print('{} {} {} skipされた'.format(artist, p, s_link))
+                        print('{} {} {} skipされた'.format(artist, p, s_url))
 
                     #     urllib.request.urlretrieve(s_link, artist_dir + '/{}.html'.format(song_cnt))
                     # except TimeoutError:

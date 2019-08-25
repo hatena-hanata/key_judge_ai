@@ -45,6 +45,10 @@ def main():
     # 全htmlファイルを取得
     html_files = [p for p in glob.glob('html/**', recursive=True) if os.path.isfile(p)]
 
+    print(len(html_files))
+
+    cnt = 0
+
     # 出力用df
     ans_df = pd.DataFrame()
 
@@ -53,21 +57,25 @@ def main():
 
         # ファイル開く
         with codecs.open(html, 'r', 'shift-jis', 'ignore') as f:
-            soup = BeautifulSoup(f, 'lxml')
+            soup = BeautifulSoup(f, 'html.parser')
             song_name = soup.find('title').text.split('/')[0] # 曲名取得
 
             # keyやcapoいくつか取得する
             original_key_str, transpose_step, continue_flg = getKeyInfo(soup)
             if continue_flg:
-                print('{}　はデータに不備があり、教師データとして使用できません'.format(song_name))
+                #print('{}　はデータに不備があり、教師データとして使用できません'.format(song_name))
+                cnt += 1
+                if cnt % 100 == 0:
+                    print(cnt)
                 continue
 
             # 曲インスタンスを作成
             song = Song(song_name, Chord(original_key_str))
 
-            # soupからコードを取得
-            chord_block = soup.find('tt')
-            chord_lst = chord_block.find_all('a')
+            # # soupからコードを取得
+            # chord_block = soup.find('tt')
+            # chord_lst = chord_block.find_all('a')
+            chord_lst = soup.find_all('a', href=re.compile("^JavaScript:jump_1"))
 
             for c in chord_lst:
                 # 文字列のコードからコードインスタンスを作成
@@ -84,7 +92,9 @@ def main():
             song_df = song.to_DataFrame()
             ans_df = ans_df.append(song_df)
 
-    ans_df.to_csv('train.csv', encoding='shift-jis', index=False)
+    ans_df.to_csv('train2.csv', encoding='shift-jis', index=False)
+
+    print(cnt)
 
 
 main()
